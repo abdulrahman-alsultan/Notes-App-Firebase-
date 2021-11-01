@@ -88,12 +88,13 @@ class MainActivity : AppCompatActivity() {
                         .addOnSuccessListener { res ->
                             for (note in res) {
                                 note.data.map { (key, value) ->
-                                    {
-                                        if (key.toString() == "pk")
+                                     if (key.toString() == "pk") {
                                             pk = value.toString().toInt()
-                                        else
+                                        }
+                                        else{
                                             n = value.toString()
-                                    }
+                                        }
+
                                 }
                                 dataFromFirebase.add(RoomNote(pk, n))
                             }
@@ -105,21 +106,55 @@ class MainActivity : AppCompatActivity() {
                         }
             }
             R.id.link -> {
-                Log.d("plplpl22", "i.toString()")
 
-                val notesFromSqLite = myViewModel.getNotes()
-                val count = notesFromSqLite.value!!.size
-                var current = 0
-                for (i in notesFromSqLite.value!!){
-                    db.collection("notes")
-                        .add(hashMapOf(
-                            "pk" to i.pk,
-                            "note" to i.note
-                        )).addOnSuccessListener {
-                            current++
-                            Toast.makeText(this, "$count/$current", Toast.LENGTH_SHORT).show()
+                val dataFromFirebase = mutableListOf<RoomNote>()
+                var n = ""
+                var pk = -1
+                db.collection("notes")
+                    .get()
+                    .addOnSuccessListener { res ->
+                        for (note in res) {
+                            note.data.map { (key, value) ->
+                                if (key.toString() == "pk") {
+                                    pk = value.toString().toInt()
+                                } else {
+                                    n = value.toString()
+                                }
+
+                            }
+                            dataFromFirebase.add(RoomNote(pk, n))
                         }
-                }
+                        val notesFromSqLite = myViewModel.getNotes().value!!
+                        val count = notesFromSqLite.size
+                        var current = 0
+
+                        for (i in notesFromSqLite) {
+                            var bool = true
+                            for (j in dataFromFirebase) {
+                                if (j.pk == i.pk){
+                                    Log.d("already existtt", "lfjlei")
+                                    current++
+                                    bool = false
+                                }
+                            }
+                            if(bool){
+                                db.collection("notes")
+                                    .add(
+                                        hashMapOf(
+                                            "pk" to i.pk,
+                                            "note" to i.note
+                                        )
+                                    )
+                                    .addOnSuccessListener {
+                                        current++
+                                        Toast.makeText(this, "$count/$current", Toast.LENGTH_SHORT)
+                                            .show()
+                                    }
+                            }
+                        }
+                    }
+
+
             }
             R.id.sqlite -> {
                 val notesFromSqLite = myViewModel.getNotes()
