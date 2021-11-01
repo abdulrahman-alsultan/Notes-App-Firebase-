@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 class MyViewModel(application: Application): AndroidViewModel(application) {
 
     private val repository: NoteRepository
-    private val notes: LiveData<List<RoomNote>>
+    private var notes: LiveData<List<RoomNote>>
 
     init {
         val noteDao = NoteDatabase.getInstance(application).noteDao()
@@ -21,6 +21,7 @@ class MyViewModel(application: Application): AndroidViewModel(application) {
     fun getNotes(): LiveData<List<RoomNote>>{
         return notes
     }
+
 
     fun addNote(noteText: String){
         CoroutineScope(IO).launch {
