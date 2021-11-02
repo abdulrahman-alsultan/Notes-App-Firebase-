@@ -1,6 +1,7 @@
 package com.example.notesappviewmodel
 
 import android.app.AlertDialog
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -8,6 +9,7 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -77,9 +79,11 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.firebase -> {
+                this.title = "Firebase"
                 val dataFromFirebase = mutableListOf<RoomNote>()
                 var n = ""
                 var pk = -1
@@ -106,7 +110,6 @@ class MainActivity : AppCompatActivity() {
                         }
             }
             R.id.link -> {
-
                 val dataFromFirebase = mutableListOf<RoomNote>()
                 var n = ""
                 var pk = -1
@@ -127,19 +130,32 @@ class MainActivity : AppCompatActivity() {
                         val notesFromSqLite = myViewModel.getNotes().value!!
                         val count = notesFromSqLite.size
                         var current = 0
+                        val tmp = dataFromFirebase.listIterator()
 
                         for (i in notesFromSqLite) {
                             var bool = true
-                            for (j in dataFromFirebase) {
-                                if (j.pk == i.pk){
-                                    Log.d("already existtt", "lfjlei")
+                            while (tmp.hasNext()) {
+                                val j = tmp.next()
+                                if (j.pk == i.pk) {
+                                    if (i.note != j.note) {
+                                        db.collection("notes").document(j.pk.toString())
+                                            .update("note", i.note)
+                                    }
+                                    tmp.remove()
                                     current++
                                     bool = false
                                 }
                             }
-                            if(bool){
-                                db.collection("notes")
-                                    .add(
+
+                            while (tmp.hasPrevious()) {
+                                val f = tmp.previous()
+                                db.collection("notes").document(f.pk.toString()).delete()
+                                tmp.remove()
+                            }
+                            if (bool) {
+
+                                db.collection("notes").document(i.pk.toString())
+                                    .set(
                                         hashMapOf(
                                             "pk" to i.pk,
                                             "note" to i.note
@@ -157,6 +173,7 @@ class MainActivity : AppCompatActivity() {
 
             }
             R.id.sqlite -> {
+                this.title = "SQLite"
                 val notesFromSqLite = myViewModel.getNotes()
                 adapter.update(notesFromSqLite.value!!)
             }
